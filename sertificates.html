@@ -5,46 +5,85 @@
     <title>Сертификаты</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-    <!-- Подключаем те же стили, что и на index.html -->
-    <link rel="stylesheet" href="styles.css"/>
     <link rel="stylesheet" href="global.css"/>
+    <link rel="stylesheet" href="styles.css"/>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>sertificates</h1>
-    </div>
 
-    <nav class="nav">
-        <a href="index.html">home</a>
-        <ul id="feed"></ul>
-    </nav>
+<body>
+
+<div class="container">
+
+    <h1>Сертификаты</h1>
+
+    <!-- Только кнопка на главную -->
+    <a class="btn" href="index.html">На главную</a>
+
+    <div class="grid cols-2" id="list"></div>
+
 </div>
 
-<script>
-    const STORAGE_KEY = 'photoPosts';
-    const feed = document.getElementById('feed');
+<script type="module" src="firebase-init.js"></script>
 
-    function add(post) {
-      const li = document.createElement('li');
-      li.className = 'card enter';
-      const figure = document.createElement('figure');
-      const img = document.createElement('img');
-      img.className = 'post';
-      const cap = document.createElement('figcaption');
+<script type="module">
+import { collection, getDocs, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-      img.src = post.src;
-      img.alt = post.caption || 'image';
-      cap.textContent = post.caption || 'no caption';
+const list = document.getElementById("list");
 
-      figure.appendChild(img);
-      figure.appendChild(cap);
-      li.appendChild(figure);
-      feed.prepend(li);
-      li.addEventListener('animationend', () => li.classList.remove('enter'), { once: true });
+async function load() {
+    list.innerHTML = "<p>Загрузка...</p>";
+
+    const q = query(
+        collection(window.db, "certificates"),
+        orderBy("createdAt", "desc")
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+        list.innerHTML = "<p>Пока нет сертификатов.</p>";
+        return;
     }
 
-    (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')).forEach(add);
+    list.innerHTML = "";
+
+    snap.forEach(doc => {
+        const item = doc.data();
+
+        const card = document.createElement("div");
+        card.className = "card reveal";
+
+        const head = document.createElement("div");
+        head.className = "card-header";
+        head.textContent = item.title;
+        card.appendChild(head);
+
+        const body = document.createElement("div");
+        body.className = "card-content";
+
+        if (item.image) {
+            const img = document.createElement("img");
+            img.src = item.image;
+            img.alt = item.title;
+            img.style.maxWidth = "100%";
+            img.style.borderRadius = "8px";
+            body.appendChild(img);
+        }
+
+        if (item.text) {
+            const p = document.createElement("p");
+            p.textContent = item.text;
+            p.style.marginTop = "10px";
+            body.appendChild(p);
+        }
+
+        card.appendChild(body);
+        list.appendChild(card);
+    });
+}
+
+load();
 </script>
+
 </body>
 </html>
